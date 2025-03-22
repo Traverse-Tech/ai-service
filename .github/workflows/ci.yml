@@ -3,13 +3,11 @@ name: Deploy to Google Cloud VM with Docker
 on:
   push:
     branches:
+      - main
       - feat/ci
     paths-ignore:
       - README.md
       - .gitignore
-  pull_request_target:
-    branches:
-      - main
 
 jobs:
   publish:
