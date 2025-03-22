@@ -1,1 +1,9 @@
 Django
+djangorestframework 
+grpcio
+grpcio-tools
+django-grpc-framework
+psycopg2
+google-cloud-aiplatform
+protobuf
+python-dotenv
