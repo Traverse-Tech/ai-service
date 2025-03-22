@@ -54,39 +54,14 @@ jobs:
       - name: Access gcloud CLI
         run: gcloud info
 
-
-      # - name: Set up Cloud CLI
-      #   uses: google-github-actions/setup-gcloud@v0.3.0
-      #   with:
-      #     project_id: ${{ secrets.GCE_PROJECT_ID }}
-      #     service_account_key: ${{ secrets.GCP_CREDENTIALS }}
-      #     export_default_credentials: true
-
-      # - name: Access gcloud CLI
-      #   run: |
-      #     gcloud auth configure-docker
-
-      # - name: Checkout repository
-      #   uses: actions/checkout@v3
-
-      # - name: Copy docker-compose.yml into GCP Instance
-      #   uses: appleboy/scp-action@master
-      #   with:
-      #     host: ${{ secrets.GCP_VM_IP }}
-      #     username: ${{ secrets.GCP_USER }}
-      #     key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
-      #     source: 'docker-compose.yml'
-      #     target: '/home/${{ secrets.GCP_USER }}/'
-
-      # - name: SSH into GCP and Run Docker Container
-      #   uses: appleboy/ssh-action@master
-      #   with:
-      #     host: ${{ secrets.GCP_VM_IP }}
-      #     username: ${{ secrets.GCP_USER }}
-      #     key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
-      #     script: |
-      #       echo "DATABASE_URL=postgresql://${{ vars.DATABASE_USERNAME }}:${{ vars.DATABASE_PASSWORD }}@${{ vars.DATABASE_HOST }}:5432/${{ vars.DATABASE_NAME }}?schema=public" >> .env
-      #       sed -i -e 's/iqbalpa\/backend-movies/${{ secrets.DOCKERHUB_USERNAME }}\/${{ vars.DOCKER_IMAGE_NAME }}/g' docker-compose.yml
-      #       docker compose -f /home/${{ secrets.GCP_USER }}/docker-compose.yml down
-      #       docker compose -f /home/${{ secrets.GCP_USER }}/docker-compose.yml up --pull always -d
-      #       docker image prune -f -a
+      - name: Connect to Google Cloud VM and Deploy Container
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.GCP_VM_IP }}
+          username: ${{ secrets.GCP_VM_USERNAME }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
+            docker stop ai-service || true
+            docker rm ai-service || true
+            docker run -d --name ai-service -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
