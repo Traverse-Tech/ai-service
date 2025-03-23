@@ -7,3 +7,4 @@ psycopg2
 google-cloud-aiplatform
 protobuf
 python-dotenv
+google-cloud-storage
