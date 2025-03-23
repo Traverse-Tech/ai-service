@@ -43,12 +43,10 @@ Dalam upaya mendukung caregiver dan pasien demensia, **PanduanMemori** hadir seb
 
 #### AI
 1. Django
-2. Google text-to-speech API
-3. Google speech-to-text API (ASR)
-4. Google Vertex AI
-5. Google Cloud Storage (to store audio files)
-6. Vertex AI (LLM Processing, Use PaLM API for answering questions based on the transcribed text)
-7. Text-to-Speech (TTS)
+2. Google Text-to-Speech API (TTS)
+3. Google Speech-to-Text API (ASR)
+4. Google Cloud Storage (to store audio files)
+5. Google Vertex AI (LLM Processing, Use PaLM API for answering questions based on the transcribed text)
 
 #### Userflow and Mockup
 1. Figma
