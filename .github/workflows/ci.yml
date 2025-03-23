@@ -66,11 +66,12 @@ jobs:
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           script: |
             echo '${{ secrets.GCP_CREDENTIALS }}' > /home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json
-            export GOOGLE_APPLICATION_CREDENTIALS="/home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json"
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
             docker stop ai-service || true
             docker rm ai-service || true
-            docker run -d --name ai-service -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
+            docker run -d --name ai-service -p 8000:8000 \
+              -e GOOGLE_APPLICATION_CREDENTIALS="/home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json" \
+              ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
 
   healthcheck:
     runs-on: ubuntu-latest
