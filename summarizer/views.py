@@ -2,8 +2,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 import grpc
-import log_summary_pb2
-import log_summary_pb2_grpc
+from summarizer import log_summary_pb2
+from summarizer import log_summary_pb2_grpc
 
 @csrf_exempt
 def summarize_logs(request):

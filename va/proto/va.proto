@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package va;
+
+service VoiceAssistantService {
+  rpc ProcessAudio (AudioRequest) returns (AudioResponse);
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message AudioRequest {
+  bytes audio_data = 1;
+  string session_id = 2;
+}
+
+message AudioResponse {
+  string session_id = 1;
+  string transcribed_text = 2;
+  string ai_response = 3;
+  string audio_response_url = 4;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string message = 1;
+}

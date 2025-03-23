@@ -10,7 +10,6 @@ from vertexai.generative_models import GenerativeModel
 import vertexai
 from pydub import AudioSegment
 
-# Create your views here.
 @api_view(['GET'])
 def index(request):
   return Response({'message': 'Hello, world!'})

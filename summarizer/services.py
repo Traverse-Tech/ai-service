@@ -1,7 +1,5 @@
-import grpc
-from concurrent import futures
-import log_summary_pb2
-import log_summary_pb2_grpc
+from summarizer import log_summary_pb2
+from summarizer import log_summary_pb2_grpc
 import json
 from vertexai.generative_models import GenerativeModel
 from vertexai import init
@@ -12,11 +10,12 @@ load_dotenv()
 
 PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "default-project-id")
 LOCATION = os.environ.get("GCP_LOCATION", "us-central1")
+MODEL_NAME = os.environ.get("MODEL_NAME")
+init(project=PROJECT_ID, location=LOCATION)
 
 class LogSummaryServiceServicer(log_summary_pb2_grpc.LogSummaryServiceServicer):
     def __init__(self):
-        init(project=PROJECT_ID, location=LOCATION)
-        self.model = GenerativeModel("gemini-2.0-flash-001")
+        self.model = GenerativeModel(MODEL_NAME)
 
     def SummarizeLogs(self, request, context):
         logs = [
@@ -41,14 +40,3 @@ class LogSummaryServiceServicer(log_summary_pb2_grpc.LogSummaryServiceServicer):
             generation_config={"temperature": 0.2, "max_output_tokens": 256}
         )
         return response.text.strip()
-
-def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    log_summary_pb2_grpc.add_LogSummaryServiceServicer_to_server(LogSummaryServiceServicer(), server)
-    server.add_insecure_port("[::]:50051")
-    server.start()
-    print("gRPC server started on port 50051...")
-    server.wait_for_termination()
-
-if __name__ == "__main__":
-    serve()
