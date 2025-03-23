@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package logsummary;
+
+service LogSummaryService {
+  rpc SummarizeLogs (LogRequest) returns (LogResponse);
+}
+
+message ActivityCategory {
+  string name = 1;
+}
+
+message Activity {
+  string title = 1;
+  ActivityCategory activity_category = 2;
+}
+
+message ActivityOccurrence {
+  string datetime = 1;
+  bool is_completed = 2;
+  Activity activity = 3;
+}
+
+message LogRequest {
+  repeated ActivityOccurrence logs = 1;
+}
+
+message LogResponse {
+  string summary = 1;
+}
