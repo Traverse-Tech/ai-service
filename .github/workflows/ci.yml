@@ -71,3 +71,20 @@ jobs:
             docker stop ai-service || true
             docker rm ai-service || true
             docker run -d --name ai-service -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
+
+  healthcheck:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Wait for Deployment to Finish
+        run: sleep 30s
+
+      - name: Check if Container is Running
+        id: healthcheck
+        run: |
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.GCP_VM_IP }}:8000/va/healthcheck/)
+          echo "status=$STATUS_CODE" >> $GITHUB_ENV
+
+      - name: Fail if Container is not Running
+        run: exit 1
+        if: env.status != '200'
