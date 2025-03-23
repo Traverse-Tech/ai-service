@@ -73,7 +73,8 @@ jobs:
             docker stop ai-service || true
             docker rm ai-service || true
             docker run -d --name ai-service -p 8000:8000 \
-              -e GOOGLE_APPLICATION_CREDENTIALS="/home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json" \
+              -v /home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json:/usr/src/app/gcp-key.json \
+              -e GOOGLE_APPLICATION_CREDENTIALS="/usr/src/app/gcp-key.json" \
               ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
 
   healthcheck:
