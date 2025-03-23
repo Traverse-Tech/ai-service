@@ -4,6 +4,11 @@ grpcio
 grpcio-tools
 django-grpc-framework
 psycopg2
-google-cloud-aiplatform
 protobuf
 python-dotenv
+google-cloud-storage
+google-cloud-speech 
+google-cloud-texttospeech 
+google-cloud-aiplatform
+pydub
+vertexai

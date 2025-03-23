@@ -90,3 +90,5 @@ db.sqlite3
 
 ### Testing
 test_api.py
+local-file-uploader.json
+temp/

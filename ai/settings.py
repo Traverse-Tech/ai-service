@@ -11,10 +11,19 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+GCP_PROJECT_ID = 'panduanmemori'
+GCP_LOCATION = 'us-central1'
+GCP_QUESTION_BUCKET = 'panduanmemori-va-questions'
+GCP_ANSWER_BUCKET = 'panduanmemori-va-answers'
+GCP_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -23,9 +32,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=1d6d1qj8=#eveq=s#vxu(&!e2r=y_22jr=$$1@4edn3$&wgf$'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -37,6 +46,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'va',
 ]
 
 MIDDLEWARE = [
