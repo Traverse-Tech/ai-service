@@ -6,7 +6,6 @@ django-grpc-framework
 psycopg2
 protobuf
 python-dotenv
-vertexai==1.71.1
 google-cloud-storage
 google-cloud-speech 
 google-cloud-texttospeech 
