@@ -66,13 +66,17 @@ jobs:
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           script: |
             echo '${{ secrets.GCP_CREDENTIALS }}' > /home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json
-            echo '${{ secrets.GCP_CREDENTIALS }}' > /home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json
             echo 'export GOOGLE_APPLICATION_CREDENTIALS="/home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json"' >> ~/.bashrc
             source ~/.bashrc
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
             docker stop ai-service || true
             docker rm ai-service || true
-            docker run -d --name ai-service -p 8000:8000 \
+            docker run -d --name ai-service -p 50051:50051 \
               -v /home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json:/usr/src/app/gcp-key.json \
               -e GOOGLE_APPLICATION_CREDENTIALS="/usr/src/app/gcp-key.json" \
+              -e QUESTION_BUCKET_NAME="${{ secrets.QUESTION_BUCKET_NAME }}" \
+              -e ANSWER_BUCKET_NAME="${{ secrets.ANSWER_BUCKET_NAME }}" \
+              -e GCP_PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}" \
+              -e GCP_LOCATION="${{ secrets.GCP_LOCATION }}" \
+              -e MODEL_NAME="${{ secrets.MODEL_NAME }}" \
               ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
