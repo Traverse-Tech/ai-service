@@ -6,12 +6,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 from google.cloud import storage, speech, texttospeech
-from google.api_core.exceptions import GoogleAPIError
 from vertexai.generative_models import GenerativeModel
 import vertexai
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
-from .serializers import AudioUploadSerializer
+from pydub import AudioSegment
 
 # Create your views here.
 @api_view(['GET'])
@@ -61,9 +58,9 @@ def transcribe_audio(gcs_uri):
     try:
         audio = speech.RecognitionAudio(uri=gcs_uri)
         config = speech.RecognitionConfig(
-            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16, 
             sample_rate_hertz=16000,
-            language_code="id-ID",
+            language_code="en-US",
         )
         response = speech_client.recognize(config=config, audio=audio)
         if not response.results:
@@ -97,7 +94,7 @@ def text_to_speech(text, output_filename):
     try:
         synthesis_input = texttospeech.SynthesisInput(text=text)
         voice = texttospeech.VoiceSelectionParams(
-            language_code="id-ID",
+            language_code="en-US",
             ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
         )
         audio_config = texttospeech.AudioConfig(
@@ -128,6 +125,20 @@ def cleanup_temp_files(file_paths):
             logger.warning(f"Failed to delete temporary file {path}: {str(e)}")
 
 
+def convert_audio(input_audio_path, output_audio_path):
+    """Converts audio to 16-bit PCM WAV, mono, 16kHz."""
+    try:
+        audio = AudioSegment.from_file(input_audio_path)
+        audio = audio.set_sample_width(2)  # 2 bytes = 16-bit
+        audio = audio.set_frame_rate(16000)  # Standard ASR sample rate
+        audio = audio.set_channels(1)  # Mono for speech recognition
+        audio.export(output_audio_path, format="wav")  # Save as WAV
+        return output_audio_path
+    except Exception as e:
+        logger.error(f"Error converting audio: {str(e)}")
+        raise
+
+
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
 def voice_assistant(request):
@@ -147,6 +158,7 @@ def voice_assistant(request):
 
         audio_file = request.FILES["audio"]
         session_id = request.data.get("session_id", str(uuid.uuid4()))
+        print(f"Session ID: {session_id}")
         
         # Create file paths and track for cleanup
         temp_files = []
@@ -167,32 +179,49 @@ def voice_assistant(request):
                 f.write(chunk)
                 
         # 1. Upload to GCS question bucket
+        print("Uploading to GCS...")
+        # gcs_question_path = upload_to_gcs(
+        #     temp_input_path, 
+        #     input_filename, 
+        #     QUESTION_BUCKET_NAME
+        # )
+        # Convert before upload
+        converted_audio_path = convert_audio(temp_input_path, temp_input_path)  
         gcs_question_path = upload_to_gcs(
-            temp_input_path, 
+            converted_audio_path, 
             input_filename, 
             QUESTION_BUCKET_NAME
         )
+        print("Uploaded to GCS")
         
         # 2. Speech-to-Text
+        print("Transcribing audio...")
         transcribed_text = transcribe_audio(gcs_question_path)
         if not transcribed_text:
             return Response(
                 {"error": "Could not transcribe audio"}, 
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY
             )
+        print("Transcribed audio")
         
         # 3. Get LLM Response
+        print("Getting LLM response...")
         ai_response = get_llm_response(transcribed_text)
+        print("Got LLM response")
         
         # 4. Convert Response to Speech
+        print("Converting response to speech...")
         text_to_speech(ai_response, temp_output_path)
+        print("Converted response to speech")
         
         # 5. Upload TTS response to GCS answer bucket
+        print("Uploading TTS response to GCS...")
         gcs_answer_path = upload_to_gcs(
             temp_output_path, 
             output_filename, 
             ANSWER_BUCKET_NAME
         )
+        print("Uploaded TTS response to GCS")
         
         # Return results
         response_data = {
@@ -201,6 +230,7 @@ def voice_assistant(request):
             "ai_response": ai_response,
             "audio_response_url": gcs_answer_path,
         }
+        print("Returning results", response_data)
         
         # Cleanup temporary files
         cleanup_temp_files(temp_files)
