@@ -59,6 +59,8 @@ jobs:
           username: ${{ secrets.GCP_VM_USERNAME }}
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           script: |
+            echo '${{ secrets.GCP_CREDENTIALS }}' > /home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json
+            export GOOGLE_APPLICATION_CREDENTIALS="/home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json"
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
             docker stop ai-service || true
             docker rm ai-service || true

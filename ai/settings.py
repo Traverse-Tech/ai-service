@@ -23,7 +23,7 @@ GCP_PROJECT_ID = 'panduanmemori'
 GCP_LOCATION = 'us-central1'
 GCP_QUESTION_BUCKET = 'panduanmemori-va-questions'
 GCP_ANSWER_BUCKET = 'panduanmemori-va-answers'
-GCP_CREDENTIALS = os.getenv("GCP_CREDENTIALS")
+GCP_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
