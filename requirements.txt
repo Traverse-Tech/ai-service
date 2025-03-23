@@ -12,11 +12,3 @@ google-cloud-texttospeech
 google-cloud-aiplatform
 pydub
 vertexai
-
-# transformers
-# torch
-# torchaudio
-# soundfile
-# datasets
-# librosa
-# TTS
