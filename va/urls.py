@@ -5,6 +5,7 @@ from va import views
 urlpatterns = [
     path('test/', views.index),
     path('/', views.va_request),
+    path('upload/', views.upload_file),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
