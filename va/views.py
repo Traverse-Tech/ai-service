@@ -76,8 +76,10 @@ def transcribe_audio(gcs_uri):
 def get_llm_response(text):
     """Gets a response from Vertex AI's Gemini model."""
     try:
+        system_prompt = '''Ini adalah curhatan seorang pasien demensia. Pasien ini membutuhkan seorang teman bercerita untuk
+yang menanggapi dan mendengarkan dengan baik. Berikanlah respons yang singkat saja, tetapi sesuai untuk memvalidasi perasaannya dan mendengarkan curhatannya. Ajaklah ia lebih banyak mengobrol:\n'''
         model = GenerativeModel(MODEL_NAME)
-        response = model.generate_content(text)
+        response = model.generate_content(system_prompt + text)
         if not response or not hasattr(response, 'text'):
             logger.warning("No valid response from LLM")
             return "Sorry, I couldn't process your request."
@@ -127,7 +129,7 @@ def cleanup_temp_files(file_paths):
 def convert_audio(input_audio_path, output_audio_path):
     """Converts audio to 16-bit PCM WAV, mono, 16kHz."""
     try:
-        audio = AudioSegment.from_file(input_audio_path)
+        audio = AudioSegment.from_file(input_audio_path, format='m4a')
         audio = audio.set_sample_width(2)  # 2 bytes = 16-bit
         audio = audio.set_frame_rate(16000)  # Standard ASR sample rate
         audio = audio.set_channels(1)  # Mono for speech recognition

@@ -10,5 +10,8 @@ google-cloud-storage
 google-cloud-speech 
 google-cloud-texttospeech 
 google-cloud-aiplatform
+ffmpeg
+ffprobe
 pydub
 vertexai
+psycopg2-binary
