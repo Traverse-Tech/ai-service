@@ -9,7 +9,7 @@ from google.cloud import storage, speech, texttospeech
 from vertexai.generative_models import GenerativeModel
 import vertexai
 from pydub import AudioSegment
-from utils.gcs_chat_history import get_chat_history, save_chat_history
+from va.utils import get_chat_history, save_chat_history
 
 @api_view(['GET'])
 def index(request):
@@ -205,6 +205,7 @@ def voice_assistant(request):
         # 2b. Load conversation history
         history = get_chat_history(str(user_id))
         history.append({"role": "user", "content": transcribed_text})
+        print(f"History: {history}")
         
         # 3. Get LLM Response
         print("Getting LLM response...")
