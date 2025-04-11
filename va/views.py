@@ -59,7 +59,7 @@ def transcribe_audio(gcs_uri):
         config = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16, 
             sample_rate_hertz=16000,
-            language_code="en-US",
+            language_code="id-ID",
         )
         response = speech_client.recognize(config=config, audio=audio)
         if not response.results:
