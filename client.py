@@ -2,7 +2,8 @@ import grpc
 from va import va_pb2
 from va import va_pb2_grpc
 
-channel = grpc.insecure_channel("localhost:50051")
+# channel = grpc.insecure_channel("localhost:50051")
+channel = grpc.insecure_channel("http://35.184.83.63:50051")
 stub = va_pb2_grpc.VoiceAssistantServiceStub(channel)
 
 with open("temp/test_audio.wav", "rb") as f:

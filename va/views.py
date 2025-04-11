@@ -9,6 +9,7 @@ from google.cloud import storage, speech, texttospeech
 from vertexai.generative_models import GenerativeModel
 import vertexai
 from pydub import AudioSegment
+from va.utils import get_chat_history, save_chat_history
 
 @api_view(['GET'])
 def index(request):
@@ -18,8 +19,7 @@ def index(request):
 logger = logging.getLogger(__name__)
 
 # Google Cloud Config
-QUESTION_BUCKET_NAME = "panduanmemori-va-questions"
-ANSWER_BUCKET_NAME = "panduanmemori-va-answers"
+BUCKET_NAME = "panduanmemori-cdn"
 PROJECT_ID = "panduanmemori"
 LOCATION = "us-central1"
 MODEL_NAME = "gemini-2.0-flash-001"
@@ -59,7 +59,7 @@ def transcribe_audio(gcs_uri):
         config = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16, 
             sample_rate_hertz=16000,
-            language_code="en-US",
+            language_code="id-ID",
         )
         response = speech_client.recognize(config=config, audio=audio)
         if not response.results:
@@ -73,11 +73,21 @@ def transcribe_audio(gcs_uri):
         raise
 
 
-def get_llm_response(text):
+def get_llm_response(text, context):
     """Gets a response from Vertex AI's Gemini model."""
     try:
+        system_prompt = '''Ini adalah curhatan seorang pasien demensia. Pasien ini membutuhkan seorang teman bercerita untuk
+yang menanggapi dan mendengarkan dengan baik. Berikanlah respons yang singkat saja, tetapi sesuai untuk memvalidasi perasaannya dan mendengarkan curhatannya. Ajaklah ia lebih banyak mengobrol:\n'''
         model = GenerativeModel(MODEL_NAME)
-        response = model.generate_content(text)
+        response = model.generate_content(system_prompt + 
+            f"""
+            Berikut adalah konteks percakapan pasien sebelumnya: 
+            {context}
+
+            Jawablah pertanyaan berikut dengan memperhatikan konteks sebelumnya:
+            {text}
+            """.strip()
+        )
         if not response or not hasattr(response, 'text'):
             logger.warning("No valid response from LLM")
             return "Sorry, I couldn't process your request."
@@ -93,8 +103,9 @@ def text_to_speech(text, output_filename):
     try:
         synthesis_input = texttospeech.SynthesisInput(text=text)
         voice = texttospeech.VoiceSelectionParams(
-            language_code="en-US",
-            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+            language_code="id-ID",
+            name="id-ID-Chirp3-HD-Leda",
+            ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
         )
         audio_config = texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.LINEAR16
@@ -127,7 +138,7 @@ def cleanup_temp_files(file_paths):
 def convert_audio(input_audio_path, output_audio_path):
     """Converts audio to 16-bit PCM WAV, mono, 16kHz."""
     try:
-        audio = AudioSegment.from_file(input_audio_path)
+        audio = AudioSegment.from_file(input_audio_path, format='m4a')
         audio = audio.set_sample_width(2)  # 2 bytes = 16-bit
         audio = audio.set_frame_rate(16000)  # Standard ASR sample rate
         audio = audio.set_channels(1)  # Mono for speech recognition
@@ -151,10 +162,13 @@ def voice_assistant(request):
     6. Return results
     """
     try:
+        
         # Validate request
+        user_id = request.data.get("user_id")
         if "audio" not in request.FILES:
             return Response({"error": "No audio file provided"}, status=status.HTTP_400_BAD_REQUEST)
-
+        if not user_id:
+            return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
         audio_file = request.FILES["audio"]
         session_id = request.data.get("session_id", str(uuid.uuid4()))
         print(f"Session ID: {session_id}")
@@ -179,17 +193,13 @@ def voice_assistant(request):
                 
         # 1. Upload to GCS question bucket
         print("Uploading to GCS...")
-        # gcs_question_path = upload_to_gcs(
-        #     temp_input_path, 
-        #     input_filename, 
-        #     QUESTION_BUCKET_NAME
-        # )
         # Convert before upload
-        converted_audio_path = convert_audio(temp_input_path, temp_input_path)  
+        converted_audio_path = convert_audio(temp_input_path, temp_input_path)
+        question_blob_path = f"questions/{input_filename}"
         gcs_question_path = upload_to_gcs(
             converted_audio_path, 
-            input_filename, 
-            QUESTION_BUCKET_NAME
+            question_blob_path,
+            BUCKET_NAME
         )
         print("Uploaded to GCS")
         
@@ -202,10 +212,16 @@ def voice_assistant(request):
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY
             )
         print("Transcribed audio")
+
+        # 2b. Load conversation history
+        history = get_chat_history(str(user_id))
+        history.append({"role": "user", "content": transcribed_text})
+        print(f"History: {history}")
         
         # 3. Get LLM Response
         print("Getting LLM response...")
-        ai_response = get_llm_response(transcribed_text)
+        ai_response = get_llm_response(transcribed_text, history)
+        history.append({"role": "assistant", "content": ai_response})
         print("Got LLM response")
         
         # 4. Convert Response to Speech
@@ -215,12 +231,16 @@ def voice_assistant(request):
         
         # 5. Upload TTS response to GCS answer bucket
         print("Uploading TTS response to GCS...")
+        answer_blob_path = f"answers/{output_filename}"
         gcs_answer_path = upload_to_gcs(
             temp_output_path, 
-            output_filename, 
-            ANSWER_BUCKET_NAME
+            answer_blob_path,
+            BUCKET_NAME
         )
         print("Uploaded TTS response to GCS")
+
+        # 6. Save back the history to GCS
+        save_chat_history(str(user_id), history)
         
         # Return results
         response_data = {
