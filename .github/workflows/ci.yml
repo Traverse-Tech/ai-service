@@ -71,7 +71,7 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:latest
             docker stop ai-service || true
             docker rm ai-service || true
-            docker run -d --name ai-service -p 50051:50051 \
+            docker run -d --name ai-service -p 8000:8000 \
               -v /home/${{ secrets.GCP_VM_USERNAME }}/gcp-key.json:/usr/src/app/gcp-key.json \
               -e GOOGLE_APPLICATION_CREDENTIALS="/usr/src/app/gcp-key.json" \
               -e QUESTION_BUCKET_NAME="${{ secrets.QUESTION_BUCKET_NAME }}" \
