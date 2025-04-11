@@ -14,4 +14,7 @@ ffmpeg
 ffprobe
 pydub
 vertexai
+wordcloud
+matplotlib
 psycopg2-binary
+requests
