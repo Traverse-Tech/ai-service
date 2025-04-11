@@ -73,11 +73,19 @@ def transcribe_audio(gcs_uri):
         raise
 
 
-def get_llm_response(text):
+def get_llm_response(text, context):
     """Gets a response from Vertex AI's Gemini model."""
     try:
         model = GenerativeModel(MODEL_NAME)
-        response = model.generate_content(text)
+        response = model.generate_content(
+            f"""
+            given the previous conversations as context: 
+            {context}
+
+            answer the question below by considering the context:
+            {text}
+            """.strip()
+        )
         if not response or not hasattr(response, 'text'):
             logger.warning("No valid response from LLM")
             return "Sorry, I couldn't process your request."
@@ -209,7 +217,7 @@ def voice_assistant(request):
         
         # 3. Get LLM Response
         print("Getting LLM response...")
-        ai_response = get_llm_response(transcribed_text)
+        ai_response = get_llm_response(transcribed_text, history)
         history.append({"role": "assistant", "content": ai_response})
         print("Got LLM response")
         
