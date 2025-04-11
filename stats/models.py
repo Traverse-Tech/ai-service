@@ -23,5 +23,7 @@ class ActivityOccurrence(models.Model):
     datetime = models.DateTimeField()
     is_completed = models.BooleanField()
     is_ontime = models.BooleanField()
+    actual_start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
